@@ -1,0 +1,60 @@
+version: "3"
+
+services:
+  mysql:
+    # restart: always
+    image: mysql:8.0.31
+    container_name: mlflow_db
+    ports:
+      - "3306:3306"
+    env_file:
+      - .env
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_HOST="%"
+    volumes:
+      - mlflow_mysql_data:/var/lib/mysql
+      # Directory with *sql files to initialize DB
+      - "${PWD}/sql_scripts:/docker-entrypoint-initdb.d"
+    command: --authentication_policy=mysql_native_password
+
+  minio:
+    image: minio/minio:latest
+    ports:
+     - "9000:9000"
+     - "9001:9001"
+    env_file:
+      - .env
+    environment:
+      - "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}"
+      - "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}"
+      - "MINIO_ROOT_USER=${MINIO_ROOT_USER}"
+      - "MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}"
+    volumes: 
+      - mlflow_minio_data:/data
+    command: server /data --console-address ':9001' --address ':9000'  
+
+  mlflow:
+    build: ./mlflow
+    image: mlflow_server
+    container_name: mlflow_server
+    ports:
+      - "5001:5000"
+    env_file:
+      - .env
+    environment:
+      - S3_MLFLOW_BUCKET=${S3_MLFLOW_BUCKET}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE} --artifacts-destination s3://${S3_MLFLOW_BUCKET}/ --serve-artifacts --host 0.0.0.0
+    depends_on:
+      - mysql
+      - minio
+
+volumes:
+  mlflow_mysql_data:
+  mlflow_minio_data:
