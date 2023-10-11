@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from mlflow.tracking import MlflowClient
 import mlflow.sklearn
 from mlflow.store.artifact.runs_artifact_repo import RunsArtifactRepository
-
+import mlflow 
 # Read dataset and split as train test
 data = pd.read_csv("https://raw.githubusercontent.com/amankharwal/Website-data/master/electricity.csv")
 print(data.head())
@@ -45,8 +45,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y,
 
 # Determine the Urls
 os.environ['MLFLOW_TRACKING_URI'] = 'http://localhost:5001/'
-os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://localhost:9000/'
-
+os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://localhost:9001/'
 
 # Eveluation metric method
 def eval_metrics(actual, pred):
@@ -56,18 +55,18 @@ def eval_metrics(actual, pred):
     return rmse, mae, r2
 
 # Set MLflow experiment
-experiment_name = "Deploy Model using FastAPI-MLflow-MINIO"
+experiment_name = "fastapi model deployment"
 mlflow.set_experiment(experiment_name)
 
 registered_model_name="RFElectricityPricePrediction"
 
 
 # Determine number of model trees
-number_of_trees=200
+number_of_trees=10
 
 # Train model and register mlflow
-with mlflow.start_run(run_name="with-reg-rf-sklearn") as run:
-    estimator = RandomForestRegressor(n_estimators=number_of_trees)
+with mlflow.start_run(run_name="with-reg-rf-regs") as run:
+    estimator = RandomForestRegressor(n_estimators=number_of_trees, verbose=2)
     estimator.fit(X_train, y_train)
 
     y_pred = estimator.predict(X_test)

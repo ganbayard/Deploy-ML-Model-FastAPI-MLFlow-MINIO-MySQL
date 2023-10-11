@@ -50,7 +50,8 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-    command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE} --artifacts-destination s3://${S3_MLFLOW_BUCKET}/ --serve-artifacts --host 0.0.0.0
+      - ARTIFACT_ROOT=s3://ins-bucket/
+    command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE} --default-artifact-root s3://${S3_MLFLOW_BUCKET}/ --serve-artifacts --host 0.0.0.0
     depends_on:
       - mysql
       - minio
